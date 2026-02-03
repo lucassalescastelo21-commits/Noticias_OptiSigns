@@ -1,109 +1,91 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CNN Brasil - Notícias</title>
-
-<style>
-body {
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #111;
-    color: white;
-}
-
-header {
-    background: #cc0000;
-    padding: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    text-align: center;
-}
-
-#container {
-    padding: 20px;
-}
-
-.noticia {
-    background: #1c1c1c;
-    margin-bottom: 15px;
-    padding: 15px;
-    border-left: 6px solid #cc0000;
-    border-radius: 6px;
-}
-
-.noticia h2 {
-    margin: 0 0 8px 0;
-    font-size: 20px;
-}
-
-.noticia p {
-    margin: 0;
-    font-size: 15px;
-    color: #ccc;
-}
-
-footer {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background: black;
-    color: white;
-    padding: 10px;
-    font-size: 14px;
-    text-align: center;
+text-align: center;
+padding: 10px;
+background: #111;
+font-size: 14px;
 }
 </style>
-
 </head>
 <body>
 
-<header>
-📰 CNN Brasil — Últimas Notícias
-</header>
 
-<div id="container">
-Carregando notícias...
-</div>
+<div id="slideshow"></div>
 
-<footer>
-Atualização automática a cada 5 minutos
-</footer>
+
+<footer>Atualização automática a cada 5 minutos</footer>
+
 
 <script>
 const rssUrl = "https://www.cnnbrasil.com.br/feed/";
 const api = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(rssUrl);
 
+
+let slides = [];
+let slideIndex = 0;
+
+
 async function carregarNoticias() {
-    try {
-        const response = await fetch(api);
-        const data = await response.json();
-
-        let html = "";
-
-        data.items.slice(0, 8).forEach(item => {
-            html += `
-                <div class="noticia">
-                    <h2>${item.title}</h2>
-                    <p>${item.description.replace(/<[^>]*>/g, '').substring(0, 180)}...</p>
-                </div>
-            `;
-        });
-
-        document.getElementById("container").innerHTML = html;
-
-    } catch (error) {
-        document.getElementById("container").innerHTML = "Erro ao carregar notícias.";
-    }
+try {
+const res = await fetch(api);
+const data = await res.json();
+montarSlides(data.items.slice(0, 10));
+} catch (e) {
+document.getElementById('slideshow').innerHTML = '<h1 style="padding:30px">Erro ao carregar notícias</h1>';
+}
 }
 
-// Carrega ao abrir
-carregarNoticias();
 
-// Atualiza a cada 5 minutos
+function montarSlides(noticias) {
+const container = document.getElementById('slideshow');
+container.innerHTML = '';
+slides = [];
+
+
+noticias.forEach((item, i) => {
+const img = item.enclosure?.link || 'https://picsum.photos/1280/720?random=' + i;
+
+
+const slide = document.createElement('div');
+slide.className = 'slide';
+
+
+slide.innerHTML = `
+<div class="img-container" style="background-image:url('${img}')"></div>
+<div class="content">
+<h1>${item.title}</h1>
+<p>${item.description.replace(/<[^>]*>/g,'').substring(0,220)}...</p>
+</div>
+`;
+
+
+container.appendChild(slide);
+slides.push(slide);
+});
+
+
+slideIndex = 0;
+mostrarSlide();
+}
+
+
+function mostrarSlide() {
+slides.forEach(slide => slide.classList.remove('active'));
+slides[slideIndex].classList.add('active');
+slideIndex = (slideIndex + 1) % slides.length;
+}
+
+
+// Troca a cada 10 segundos
+setInterval(mostrarSlide, 10000);
+
+
+// Atualiza feed a cada 5 minutos
 setInterval(carregarNoticias, 300000);
+
+
+carregarNoticias();
 </script>
+
 
 </body>
 </html>
